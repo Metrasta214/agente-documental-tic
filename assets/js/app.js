@@ -137,11 +137,6 @@ el('ask').addEventListener('click',ask);el('sync').addEventListener('click',sync
     canSync = status.can_sync ?? status.authenticated;
     controls();
     if(status.web){
-      el('account').hidden=false;
-      el('login').hidden=status.authenticated;
-      el('logout').hidden=!status.authenticated;
-      el('account-status').textContent=status.authenticated?'Administración de la biblioteca.':'Biblioteca pública: consulta los documentos sin iniciar sesión.';
-      el('login').textContent='Administrar biblioteca';
       el('sync').hidden=!canSync;
       el('sync-help').textContent=canSync?'Sincroniza los cambios de la carpeta autorizada. Hasta 20 documentos de 20 MB.':'Los documentos están listos para consultar. La sincronización está reservada al administrador.';
       controls();
