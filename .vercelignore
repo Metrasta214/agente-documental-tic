@@ -1,4 +1,5 @@
 .git
+app.py
 .venv
 .env
 .env.*
