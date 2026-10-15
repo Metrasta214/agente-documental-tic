@@ -1,5 +1,6 @@
 """Google web OAuth, owner authorization and HTTPS cookies."""
 import json
+import logging
 import os
 import secrets
 from urllib.parse import urlsplit
@@ -12,6 +13,7 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature
 from app.core.config import cloud_mode
 from app.core.cloud_state import CloudState, encode, decode, cipher
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 SCOPES = ["openid", "https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/drive.readonly"]
@@ -90,23 +92,30 @@ def login():
 def callback(request: Request):
     if not cloud_mode():
         raise HTTPException(404)
+    stage = "state"
     try:
         saved = json.loads(cipher().decrypt(request.cookies.get(OAUTH, "").encode(), ttl=600))
         state = request.query_params.get("state", "")
         if not secrets.compare_digest(state, saved["state"]) or not request.query_params.get("code"):
             raise ValueError("Invalid OAuth state")
+        stage = "token"
         oauth = flow(state=state, code_verifier=saved["verifier"])
         oauth.fetch_token(code=request.query_params["code"])
+        stage = "identity"
         claims = id_token.verify_oauth2_token(oauth.credentials.id_token, GoogleRequest(),
                                               os.environ["GOOGLE_WEB_CLIENT_ID"])
         if (claims.get("email", "").lower() != owner() or not claims.get("email_verified")
                 or claims.get("nonce") != saved["nonce"]):
             raise ValueError("Unauthorized account")
+        stage = "credentials"
         info = json.loads(oauth.credentials.to_json())
         if not info.get("refresh_token"):
             raise ValueError("Missing refresh token")
+        stage = "storage"
         CloudState.write("google-credentials.bin", info)
-    except Exception:
+    except Exception as exc:
+        # Never log the exception message, request URL, codes or token payloads.
+        logger.error("OAuth callback failed stage=%s type=%s", stage, type(exc).__name__)
         raise HTTPException(400, "No se pudo autorizar. Usa la cuenta permitida e inicia de nuevo.")
     response = RedirectResponse("/", status_code=303)
     response.set_cookie(SESSION, signer().dumps({"email": owner(), "sid": secrets.token_urlsafe(16)}),
