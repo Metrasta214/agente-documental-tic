@@ -94,35 +94,3 @@ def sync():
     except Exception:
         logger.exception("Error al sincronizar documentos")
         raise HTTPException(status_code=502, detail="Sincronización fallida. Revisa el registro local.")
-
-
-@app.get("/api/verification", dependencies=[Depends(require_owner)])
-def verification():
-    from app.services.verification_service import VerificationService
-    try:
-        return VerificationService().run()
-    except Exception:
-        logger.error("No se pudo leer el estado de verificación")
-        raise HTTPException(502, "No se pudo verificar el estado. Revisa los registros del servidor.")
-
-
-@app.post("/api/verification/compare", dependencies=[Depends(require_owner)])
-def compare_verification(payload: AskRequest):
-    if SyncService.load_manifest().get("sync", {}).get("state") == "running":
-        raise HTTPException(409, "Espera a que termine la sincronización")
-    try:
-        if cloud_mode():
-            from app.core.cloud_state import CloudState
-            CloudState.consume_quota("ask", 30, amount=2)
-        service = AgentService()
-        without = service.ask(payload.question, False)
-        with_search = service.ask(payload.question, True)
-        from datetime import datetime, timezone
-        return {"checked_at": datetime.now(timezone.utc).isoformat(), "question": payload.question,
-                "without_search": without, "with_search": with_search,
-                "interpretation": "Compara evidencia y fuentes. No se puntúa automáticamente la veracidad de las respuestas ni se garantiza que RAG elimine errores."}
-    except ValueError as exc:
-        raise HTTPException(400, str(exc))
-    except Exception:
-        logger.error("Falló la comparación documental")
-        raise HTTPException(502, "No se completó la comparación. Las llamadas realizadas pueden consumir cuota; revisa los registros.")
