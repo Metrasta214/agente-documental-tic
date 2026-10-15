@@ -108,3 +108,26 @@ def test_inventory_reports_persistent_sync_progress(web, monkeypatch):
     progress = {"state": "running", "total": 7, "processed": 2}
     monkeypatch.setattr(CloudState, "read", lambda *args: {"documents": {}, "sync": progress})
     assert web.get('/api/documents').json()["sync"] == progress
+
+
+def test_verification_endpoints_require_owner_and_origin(web):
+    assert web.get('/api/verification').status_code == 401
+    assert web.post('/api/verification/compare',json={"question":"Pregunta"}).status_code == 401
+    authorize(web)
+    assert web.post('/api/verification/compare',json={"question":"Pregunta"},headers={"origin":"https://evil.example"}).status_code == 403
+
+
+def test_comparison_uses_identical_question_both_modes(web, monkeypatch):
+    from app.main import AgentService, SyncService
+    authorize(web)
+    calls=[]
+    monkeypatch.setattr(CloudState,"consume_quota",lambda *args, **kwargs: calls.append(kwargs))
+    monkeypatch.setattr(SyncService,"load_manifest",lambda:{"sync":{"state":"completed"}})
+    monkeypatch.setattr(AgentService,"__init__",lambda self:None)
+    def ask(self,question,use_search):
+        calls.append((question,use_search))
+        return {"success":True,"answer":"test","sources":[],"retrieved_sources":[]}
+    monkeypatch.setattr(AgentService,"ask",ask)
+    r=web.post('/api/verification/compare',json={"question":"Misma pregunta"},headers={"origin":"https://archivo.example"})
+    assert r.status_code == 200
+    assert calls == [{"amount":2},("Misma pregunta",False),("Misma pregunta",True)]

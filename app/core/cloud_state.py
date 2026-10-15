@@ -83,13 +83,13 @@ class CloudState:
             yield
 
     @classmethod
-    def consume_quota(cls, kind, maximum):
+    def consume_quota(cls, kind, maximum, amount=1):
         def increment(old):
             bucket = int(time.time() // 3600)
             old = old or {}
             if old.get("hour") != bucket:
                 old = {"hour": bucket, "count": 0}
-            if old["count"] >= maximum:
+            if old["count"] + amount > maximum:
                 raise ValueError("Se alcanzó el límite por hora. Intenta más tarde.")
-            return {"hour": bucket, "count": old["count"] + 1}
+            return {"hour": bucket, "count": old["count"] + amount}
         cls.mutate("quota-" + kind + ".bin", increment)

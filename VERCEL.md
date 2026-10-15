@@ -27,3 +27,12 @@ Configurar las variables de .env.web.example en el servidor. SESSION_SECRET debe
 Probar que el visitante anónimo recibe 401 en inventario, preguntas y sincronización. Iniciar sesión con el propietario, sincronizar y consultar. Verificar persistencia después de otro despliegue, rechazo de cuentas distintas, control de Origin, enlaces de Drive y ausencia de secretos en frontend/repositorio. Las pruebas automáticas cubren controles de acceso, state, PKCE, cookies, cifrado y cuotas.
 
 Documentación: https://vercel.com/docs/frameworks/backend/fastapi ; https://vercel.com/docs/vercel-blob/private-storage ; https://developers.google.com/identity/protocols/oauth2/web-server
+
+
+## Panel de verificación de la práctica
+
+En la página principal, «Comprobar conexiones e índice» consulta la carpeta de Drive en vivo y contrasta IDs y modificaciones con el manifiesto; verifica en OpenAI los estados completed y archivos adicionales. También informa del mínimo de cinco archivos, enlaces asociados a IDs, última sincronización y cobertura PDF/TXT/Google Docs. No crea ni modifica documentos. Un corpus solo PDF muestra los otros formatos como pendientes.
+
+«Comparar sin y con RAG» utiliza exactamente la pregunta del cuadro principal para dos llamadas a AgentService. Consume dos unidades de la cuota de consultas. Muestra ambas respuestas, citas anotadas y documentos recuperados por separado, sin asignar una nota automática de veracidad. El botón de descarga exporta los resultados observados y su fecha como JSON; no exporta claves ni tokens.
+
+Las comprobaciones son puntuales. Las pruebas locales, Git/historial/secretos, lectura de enlaces originales, alta/cambio/baja de un archivo de ensayo y conclusiones personales requieren evidencias adicionales. No se presenta el panel como certificación de toda la entrega. Los endpoints nuevos requieren la misma sesión propietaria y protección de Origin que las consultas existentes.
