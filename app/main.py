@@ -24,7 +24,7 @@ async def private_responses(request: Request, call_next):
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
-        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["Referrer-Policy"] = "same-origin"
     return response
 
 def local_only(request: Request):
@@ -64,6 +64,7 @@ def documents():
     doc = SyncService.load_manifest()
     return {"documents": list(doc.get("documents", {}).values()),
             "indexed": len(doc.get("documents", {})),
+            "sync": doc.get("sync", {}),
             "vector_store_configured": bool(settings.vector_store_id or doc.get("vector_store_id"))}
 
 @app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(require_owner)])

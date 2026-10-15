@@ -95,3 +95,22 @@ def test_retrieval_is_not_a_citation(lab):
     result = agent_service.AgentService(client).ask("Busca la práctica", False)
     assert result["retrieved_sources"] == []
     assert "NO tienes acceso" in client.responses.create.call_args.kwargs["instructions"]
+
+
+def test_sync_progress_finishes_and_survives_reload(lab):
+    _, _, _, service = lab
+    service.sync()
+    state = service.load_manifest()["sync"]
+    assert state["state"] == "completed"
+    assert state["processed"] == state["total"] == 1
+    assert state["stats"]["added"] == 1
+    service.sync()
+    assert service.load_manifest()["sync"]["stats"]["unchanged"] == 1
+
+
+def test_sync_records_failure_instead_of_remaining_running(lab):
+    _, _, drive, service = lab
+    drive.list_files.side_effect = RuntimeError("Drive unavailable")
+    with pytest.raises(RuntimeError):
+        service.sync()
+    assert service.load_manifest()["sync"]["state"] == "failed"

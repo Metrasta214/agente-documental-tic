@@ -127,7 +127,10 @@ def callback(request: Request):
 
 @router.post("/auth/logout")
 def logout(request: Request):
-    require_owner(request)
+    # Allow clearing expired cookies too; keep the same-origin POST protection.
+    if cloud_mode() and request.headers.get("origin") != origin():
+        raise HTTPException(403, "Origen de la solicitud no autorizado")
     response = RedirectResponse("/", status_code=303)
     response.delete_cookie(SESSION, path="/", secure=True, httponly=True, samesite="lax")
+    response.delete_cookie(OAUTH, path="/", secure=True, httponly=True, samesite="lax")
     return response

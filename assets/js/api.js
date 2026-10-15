@@ -1,8 +1,8 @@
 import {API_ROOT} from './config.js';
 export class ApiClient {
   async request(path, options = {}) {
-    const response = await fetch(API_ROOT + path, options);
-    const data = await response.json();
+    const response = await fetch(API_ROOT + path, {cache: 'no-store', ...options});
+    const data = await response.json().catch(() => ({detail: `El servidor no completó la solicitud (HTTP ${response.status}). Revisa el estado de sincronización.`}));
     if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : `HTTP ${response.status}`);
     return data;
   }

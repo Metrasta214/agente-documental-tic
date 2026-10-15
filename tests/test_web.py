@@ -86,3 +86,25 @@ def test_web_health_requires_python_blob_credential(web, monkeypatch):
     body = web.get('/api/health').json()
     assert "BLOB_READ_WRITE_TOKEN" not in body["missing"]
     assert "test-credential-not-real" not in json.dumps(body)
+
+
+def test_logout_clears_session_and_oauth_even_when_expired(web):
+    web.cookies.set(web_auth.SESSION, "expired")
+    web.cookies.set(web_auth.OAUTH, "old-flow")
+    r = web.post('/auth/logout', headers={"origin": "https://archivo.example"}, follow_redirects=False)
+    assert r.status_code == 303
+    assert r.headers["location"] == "/"
+    cookies = r.headers.get_list("set-cookie")
+    assert any(web_auth.SESSION in c and "Max-Age=0" in c for c in cookies)
+    assert any(web_auth.OAUTH in c and "Max-Age=0" in c for c in cookies)
+    assert web.get('/api/session').json()["authenticated"] is False
+    assert web.get('/api/documents').status_code == 401
+    assert web.post('/auth/logout', headers={"origin": "https://evil.example"}).status_code == 403
+    assert web.get('/').headers["referrer-policy"] == "same-origin"
+
+
+def test_inventory_reports_persistent_sync_progress(web, monkeypatch):
+    authorize(web)
+    progress = {"state": "running", "total": 7, "processed": 2}
+    monkeypatch.setattr(CloudState, "read", lambda *args: {"documents": {}, "sync": progress})
+    assert web.get('/api/documents').json()["sync"] == progress
