@@ -1,1 +1,61 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Archivo TIC IA | Agente documental</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><link href="/assets/css/styles.css" rel="stylesheet"></head><body><header class="hero py-4"><div class="container d-flex flex-wrap justify-content-between align-items-center gap-3"><div><div class="eyebrow">PRÁCTICA 2.3 · INTELIGENCIA ARTIFICIAL APLICADA A LAS TIC</div><h1 class="h2 mb-1">Archivo TIC <span>IA</span></h1><p class="m-0 text-white-50">Agente documental con Google Drive y búsqueda semántica RAG</p></div><span class="badge rounded-pill border border-light text-light" id="health">Comprobando servidor…</span></div></header><main class="container py-4"><section id="account" class="alert alert-light border" hidden><span id="account-status"></span> <a id="login" href="/auth/login" class="btn btn-primary btn-sm">Conectar mi cuenta de Google</a><form id="logout" method="post" action="/auth/logout" hidden><button class="btn btn-outline-secondary btn-sm" type="submit">Cerrar sesión</button></form></section><div class="row g-4"><div class="col-lg-4"><section class="card shell h-100"><div class="card-body"><div class="d-flex align-items-center justify-content-between"><h2 class="h5 mb-0">Base documental</h2><span class="badge text-bg-info" id="doc-count">0</span></div><p class="small text-secondary mt-2">Archivos indexados desde una carpeta autorizada de Google Drive.</p><div id="documents" class="doc-list" aria-live="polite">Sin documentos indexados.</div><button type="button" id="sync" disabled class="btn btn-outline-primary w-100 mt-3">Sincronizar desde Drive</button><div id="sync-status" class="small mt-2" role="status" aria-live="polite"></div><p id="sync-help" class="small text-secondary mt-2 mb-0">La primera sincronización abrirá OAuth en el equipo donde corre Python. Uso exclusivamente local.</p></div></section></div><div class="col-lg-8"><section class="card shell"><div class="card-body"><h2 class="h5">Consultar al agente</h2><label class="form-label mt-2" for="question">Pregunta sobre los documentos</label><textarea class="form-control" id="question" rows="3" maxlength="3000" placeholder="¿Qué riesgos tiene la IA generativa y cómo se pueden reducir?" required></textarea><div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mt-3"><div class="form-check form-switch"><input id="use-search" class="form-check-input" type="checkbox" checked><label class="form-check-label" for="use-search">Activar File Search (RAG)</label></div><button class="btn btn-primary" type="button" id="ask" disabled>Consultar agente</button></div><div id="message" role="status" class="small mt-3" aria-live="polite"></div></div></section><section class="card shell mt-4"><div class="card-body"><h2 class="h5">Respuesta documental</h2><div id="answer" class="answer mt-3" aria-live="polite">Escribe una pregunta para comenzar.</div><h3 class="h6 mt-4">Fuentes verificables</h3><ul id="sources" class="list-group list-group-flush"></ul></div></section></div></div></main><footer class="container pb-4 small text-center text-secondary">Tecnológico Nacional de México · Campus Pachuca · Ingeniería en Sistemas Computacionales · Práctica 2.3</footer><script type="module" src="/assets/js/app.js"></script></body></html>
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Archivo TIC IA | Agente documental</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="/assets/css/styles.css" rel="stylesheet">
+</head>
+<body>
+  <a class="skip-link" href="#question">Saltar a la consulta</a>
+  <header class="hero">
+    <div class="container header-inner">
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h3z"/></svg></span><div><h1>Archivo TIC <span>IA</span></h1><p>Biblioteca de inteligencia artificial y tecnologías de la información</p></div></div>
+      <span class="server-status" id="health" role="status">Comprobando servidor…</span>
+    </div>
+  </header>
+  <main class="container workspace">
+    <div class="page-intro"><div><p class="eyebrow">ESPACIO DE INVESTIGACIÓN · PRÁCTICA 2.3</p><h2>De los documentos al conocimiento.</h2><p>Explora tu biblioteca, pregunta al agente y consulta las fuentes.</p></div><span class="workspace-label">Google Drive + IA</span></div>
+    <section id="account" class="account-bar" aria-label="Cuenta de Google" hidden>
+      <span id="account-status"></span>
+      <a id="login" href="/auth/login" class="btn btn-primary btn-sm">Conectar mi cuenta de Google</a>
+      <form id="logout" method="post" action="/auth/logout" hidden><button class="btn btn-outline-secondary btn-sm" type="submit">Cerrar sesión</button></form>
+    </section>
+    <div class="workspace-grid">
+      <aside class="library-column">
+        <section class="card shell library" aria-labelledby="library-title">
+          <div class="card-body">
+            <div class="section-heading"><h2 id="library-title">Base documental</h2><span class="visually-hidden"><span id="doc-count">0</span> documentos indexados</span><button id="toggle-documents" class="documents-toggle" type="button" aria-expanded="false" aria-controls="documents" aria-label="Mostrar archivos" hidden><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button></div>
+            <p class="section-description">Documentos de tu carpeta autorizada de Google Drive.</p>
+            <div id="documents" hidden class="doc-list" aria-label="Documentos indexados" aria-live="polite">Sin documentos indexados.</div>
+            <div class="sync-area"><button type="button" id="sync" disabled class="btn btn-outline-primary w-100">Sincronizar desde Drive</button>
+            <div id="sync-status" class="small mt-2" role="status" aria-live="polite"></div>
+            <p id="sync-help" class="small text-secondary mt-2 mb-0">La primera sincronización abrirá OAuth en el equipo donde corre Python. Uso exclusivamente local.</p></div>
+          </div>
+        </section>
+      </aside>
+      <div class="research-column">
+        <section class="card shell query-card" aria-labelledby="query-title"><div class="card-body">
+          <p class="eyebrow">CONSULTA TU BIBLIOTECA</p><h2 id="query-title">¿Qué quieres investigar?</h2>
+          <label class="form-label" for="question">Pregunta sobre los documentos</label>
+          <textarea class="form-control" id="question" rows="4" maxlength="3000" aria-describedby="question-help" placeholder="¿Qué riesgos tiene la IA generativa y cómo se pueden reducir?" required></textarea>
+          <p id="question-help" class="field-hint">Pregunta, compara conceptos o pide un resumen. <span>Ctrl / ⌘ + Enter para consultar.</span></p>
+          <div class="query-actions"><div class="form-check form-switch"><input id="use-search" class="form-check-input" type="checkbox" role="switch" aria-describedby="search-help" checked><label class="form-check-label" for="use-search">Buscar en los documentos</label><p id="search-help">File Search (RAG)</p></div><button class="btn btn-primary" type="button" id="ask" disabled>Consultar agente</button></div>
+          <div id="message" role="status" class="small mt-3" aria-live="polite"></div>
+        </div></section>
+        <section class="card shell response-card" aria-labelledby="answer-title"><div class="card-body">
+          <div class="section-heading"><h2 id="answer-title">Respuesta documental</h2><span class="response-label">ASISTENTE IA</span></div>
+          <span id="response-announcement" class="visually-hidden" role="status"></span>
+          <div id="response-scroll" class="response-scroll" role="region" aria-label="Respuesta y fuentes" tabindex="0"><div id="answer" class="answer" aria-live="off">Escribe una pregunta para comenzar.</div>
+          <div class="sources-area"><h3>Fuentes verificables</h3><ul id="sources" class="list-group list-group-flush"></ul></div>
+          <p class="ai-note">La IA puede cometer errores. Contrasta la respuesta con los documentos originales.</p></div>
+        </div></section>
+      </div>
+    </div>
+  </main>
+  <footer class="container site-footer"><span>Tecnológico Nacional de México · Campus Pachuca</span><span>Inteligencia artificial aplicada a las TIC · Práctica 2.3</span></footer>
+  <script type="module" src="/assets/js/app.js"></script>
+</body>
+</html>
