@@ -118,7 +118,7 @@ Fuentes oficiales consultadas:
 ## Pendientes de la entrega
 
 - Formatos completados: TXT, PDF y Google Docs nativo; detalles en la validacion adicional.
-- Publicar código en GitHub: Git local ya está inicializado; la pestaña de GitHub solicita iniciar sesión. No hay URL remota creada.
+- GitHub completado: https://github.com/Metrasta214/agente-documental-tic . Ramas main y feature/agente-documental publicadas. El conector GitHub publico el contenido porque el gestor de credenciales de Git no pudo ejecutarse en este entorno. El historial local anterior se conserva en ramas respaldo/local-main y respaldo/local-feature.
 - Vercel: adaptación web pendiente; impedimento documentado arriba.
 - Revisar y personalizar las conclusiones del alumno. Este informe registra observaciones técnicas y no sustituye sus conclusiones personales.
 
