@@ -1,0 +1,78 @@
+import json
+import pytest
+from fastapi.testclient import TestClient
+from app.main import app
+from app.core import web_auth
+from app.core.cloud_state import CloudState, encode, decode
+
+
+@pytest.fixture
+def web(monkeypatch):
+    monkeypatch.setenv("APP_MODE", "web")
+    monkeypatch.setenv("SESSION_SECRET", "test-only-secret-" * 5)
+    monkeypatch.setenv("OWNER_EMAIL", "owner@example.com")
+    monkeypatch.setenv("PUBLIC_BASE_URL", "https://archivo.example")
+    monkeypatch.setenv("GOOGLE_WEB_CLIENT_ID", "test.apps.googleusercontent.com")
+    monkeypatch.setenv("GOOGLE_WEB_CLIENT_SECRET", "test-secret")
+    with TestClient(app, base_url="https://archivo.example") as client:
+        yield client
+
+
+def authorize(client, email="owner@example.com"):
+    client.cookies.set(web_auth.SESSION, web_auth.signer().dumps({"email": email}))
+
+
+def test_web_blocks_anonymous_inventory_ask_and_sync(web):
+    assert web.get('/api/documents').status_code == 401
+    assert web.post('/api/ask', json={"question": "Pregunta"}).status_code == 401
+    assert web.post('/api/sync').status_code == 401
+    assert web.get('/api/session').json() == {"web": True, "authenticated": False}
+
+
+def test_web_rejects_forged_or_other_owner_session(web):
+    web.cookies.set(web_auth.SESSION, "forged")
+    assert web.get('/api/documents').status_code == 401
+    authorize(web, "other@example.com")
+    assert web.get('/api/documents').status_code == 401
+
+
+def test_owner_inventory_and_csrf(web, monkeypatch):
+    authorize(web)
+    monkeypatch.setattr(CloudState, "read", lambda *args: {"documents": {}})
+    assert web.get('/api/documents').status_code == 200
+    assert web.post('/api/sync', headers={"origin": "https://evil.example"}).status_code == 403
+    assert web.post('/api/ask', json={"question": "Pregunta"}).status_code == 403
+    assert web.get('/api/documents').headers['cache-control'] == 'no-store'
+
+
+def test_oauth_state_pkce_and_secure_cookie(web):
+    r = web.get('/auth/login', follow_redirects=False)
+    assert r.status_code == 307
+    assert 'code_challenge=' in r.headers['location']
+    assert 'nonce=' in r.headers['location']
+    cookie = r.headers['set-cookie'].lower()
+    assert 'secure' in cookie and 'httponly' in cookie and 'samesite=lax' in cookie
+    bad = web.get('/auth/callback?state=wrong&code=wrong')
+    assert bad.status_code == 400
+
+
+def test_encrypted_state_and_tamper_rejection(web):
+    raw = encode({"refresh_token": "private-test-token"})
+    assert b'private-test-token' not in raw
+    assert decode(raw)['refresh_token'] == 'private-test-token'
+    with pytest.raises(Exception):
+        decode(raw[:-1] + b'!')
+
+
+def test_sync_lease_released_and_quotas(web, monkeypatch):
+    from contextlib import contextmanager
+    @contextmanager
+    def lock(name):
+        yield
+    state = {}
+    monkeypatch.setattr(CloudState, "exclusive", lock)
+    monkeypatch.setattr(CloudState, "read", lambda name, default=None: state.get(name, default))
+    monkeypatch.setattr(CloudState, "write", lambda name, value: state.update({name: value}))
+    CloudState.consume_quota("ask", 1)
+    with pytest.raises(ValueError, match="límite"):
+        CloudState.consume_quota("ask", 1)

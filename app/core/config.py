@@ -13,3 +13,7 @@ class Settings:
     local_admin_key: str = os.getenv("LOCAL_ADMIN_KEY", "")
 
 settings = Settings()
+
+def cloud_mode() -> bool:
+    """Vercel always requires web authentication; local mode remains explicit."""
+    return os.getenv("APP_MODE") == "web" or os.getenv("VERCEL") == "1"

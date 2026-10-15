@@ -7,7 +7,7 @@ import tempfile
 import threading
 from pathlib import Path
 from openai import OpenAI
-from app.core.config import settings
+from app.core.config import settings, cloud_mode
 from app.services.drive_service import DriveService
 
 MANIFEST = Path(__file__).resolve().parents[2] / "data" / "manifest.json"
@@ -21,11 +21,18 @@ class SyncService:
 
     @staticmethod
     def load_manifest() -> dict:
+        if cloud_mode():
+            from app.core.cloud_state import CloudState
+            return CloudState.read("manifest.bin", {"vector_store_id": "", "documents": {}})
         if not MANIFEST.exists(): return {"vector_store_id": "", "documents": {}}
         return json.loads(MANIFEST.read_text(encoding="utf-8"))
 
     @staticmethod
     def save_manifest(data: dict):
+        if cloud_mode():
+            from app.core.cloud_state import CloudState
+            CloudState.write("manifest.bin", data)
+            return
         MANIFEST.parent.mkdir(parents=True, exist_ok=True)
         tmp = MANIFEST.with_suffix(".tmp")
         tmp.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -43,6 +50,13 @@ class SyncService:
         return vector_id
 
     def sync(self):
+        if cloud_mode():
+            from app.core.cloud_state import CloudState
+            with CloudState.sync_lease():
+                return self._sync()
+        return self._sync()
+
+    def _sync(self):
         if not _LOCK.acquire(blocking=False):
             raise RuntimeError("Ya existe una sincronización en curso")
         try:
@@ -52,6 +66,8 @@ class SyncService:
             self.save_manifest(manifest)
             source = self.drive.list_files(settings.drive_folder_id)
             eligible = {x["id"]: x for x in source if x["mimeType"] in SUPPORTED}
+            if cloud_mode() and len(eligible) > 20:
+                raise ValueError("El laboratorio web admite hasta 20 documentos")
             stats = {"added": 0, "updated": 0, "removed": 0, "unchanged": 0, "errors": []}
             for drive_id, item in eligible.items():
                 previous = docs.get(drive_id)

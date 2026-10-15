@@ -6,12 +6,27 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
+from app.core.config import cloud_mode
 
 SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 ROOT = Path(__file__).resolve().parents[2]
 
 class DriveService:
     def __init__(self):
+        if cloud_mode():
+            from app.core.cloud_state import CloudState
+            info = CloudState.read("google-credentials.bin")
+            if not info:
+                raise ValueError("Conecta Google desde Iniciar sesión antes de sincronizar")
+            creds = Credentials.from_authorized_user_info(info)
+            if creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+                import json
+                CloudState.write("google-credentials.bin", json.loads(creds.to_json()))
+            if not creds.valid:
+                raise ValueError("Vuelve a conectar tu cuenta de Google")
+            self.service = build("drive", "v3", credentials=creds, cache_discovery=False)
+            return
         token = ROOT / "token.json"
         credentials_file = ROOT / "credentials.json"
         creds = None
@@ -40,6 +55,8 @@ class DriveService:
             if not page: return files
 
     def get_bytes(self, item: dict) -> tuple[bytes, str, str]:
+        if cloud_mode() and int(item.get("size", 0)) > 20 * 1024 * 1024:
+            raise ValueError("El límite web es 20 MB por documento")
         mime = item["mimeType"]
         file_id = item["id"]
         if mime == "application/vnd.google-apps.document":

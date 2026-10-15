@@ -1,5 +1,9 @@
 .venv/
 .env
+.env.*
+!.env.example
+!.env.web.example
+.vercel/
 credentials.json
 token.json
 __pycache__/
