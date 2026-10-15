@@ -53,7 +53,7 @@ def health():
     if cloud_mode():
         import os
         missing += [name for name in ("SESSION_SECRET", "PUBLIC_BASE_URL", "OWNER_EMAIL",
-                                      "GOOGLE_WEB_CLIENT_ID", "GOOGLE_WEB_CLIENT_SECRET", "BLOB_STORE_ID")
+                                      "GOOGLE_WEB_CLIENT_ID", "GOOGLE_WEB_CLIENT_SECRET", "BLOB_READ_WRITE_TOKEN")
                     if not os.getenv(name)]
         return {"status": "ok", "configured": not missing, "missing": missing, "mode": "web"}
     return {"status": "ok", "configured": not missing, "missing": missing,

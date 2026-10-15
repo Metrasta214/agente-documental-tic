@@ -10,7 +10,7 @@ El propietario debe iniciar sesión y consentir la lectura de Drive. El inventar
 
 ## Persistencia y límites
 
-El almacén Vercel Blob conectado debe ser privado. Su autenticación usa BLOB_STORE_ID y OIDC del proyecto. Tokens y manifiesto se cifran adicionalmente con una clave derivada de SESSION_SECRET. No se copian token.json ni credentials.json de escritorio a Vercel.
+El almacén Vercel Blob conectado debe ser privado. El SDK Python vercel==0.11.6 requiere BLOB_READ_WRITE_TOKEN; BLOB_STORE_ID y OIDC solos no son suficientes en esta versión. En Projects > Update Project Connection se debe activar Add a read-write token env var, marcar Sensitive y volver a desplegar. El token se conserva solo en Vercel. Tokens y manifiesto se cifran adicionalmente con una clave derivada de SESSION_SECRET. No se copian token.json ni credentials.json de escritorio a Vercel.
 
 La sincronización utiliza un bloqueo persistente creado sin permitir sobrescritura; evita que dos instancias escriban el mismo manifiesto simultáneamente. Ante una ejecución terminada forzosamente, falla de forma cerrada: el administrador debe comprobar que ya no haya sincronizaciones en ejecución y retirar archivo-tic/sync.lock desde el almacén privado. Los bloqueos de cuotas tienen el sufijo .lock y se recuperan de la misma forma. No retirar un bloqueo de una operación activa.
 
@@ -20,7 +20,7 @@ Cambiar SESSION_SECRET invalida sesiones y el estado cifrado. Respaldar la clave
 
 ## Variables
 
-Configurar las variables de .env.web.example en el servidor. SESSION_SECRET debe ser aleatoria y tener al menos 40 caracteres. La cuenta OWNER_EMAIL coincide con el propietario del corpus. BLOB_STORE_ID se incorpora al conectar el almacén; usar OIDC en el deployment.
+Configurar las variables de .env.web.example en el servidor. SESSION_SECRET debe ser aleatoria y tener al menos 40 caracteres. La cuenta OWNER_EMAIL coincide con el propietario del corpus. BLOB_READ_WRITE_TOKEN se incorpora con la opción indicada al conectar el almacén privado. /api/health verifica su presencia sin mostrar su valor.
 
 ## Validación
 

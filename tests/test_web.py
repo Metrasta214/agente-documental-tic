@@ -76,3 +76,13 @@ def test_sync_lease_released_and_quotas(web, monkeypatch):
     CloudState.consume_quota("ask", 1)
     with pytest.raises(ValueError, match="límite"):
         CloudState.consume_quota("ask", 1)
+
+
+def test_web_health_requires_python_blob_credential(web, monkeypatch):
+    monkeypatch.delenv("BLOB_READ_WRITE_TOKEN", raising=False)
+    monkeypatch.setenv("BLOB_STORE_ID", "store-test")
+    assert "BLOB_READ_WRITE_TOKEN" in web.get('/api/health').json()["missing"]
+    monkeypatch.setenv("BLOB_READ_WRITE_TOKEN", "test-credential-not-real")
+    body = web.get('/api/health').json()
+    assert "BLOB_READ_WRITE_TOKEN" not in body["missing"]
+    assert "test-credential-not-real" not in json.dumps(body)
