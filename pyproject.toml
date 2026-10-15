@@ -1,2 +1,14 @@
+[project]
+name = "agente-documental-tic"
+version = "1.0.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.30,<1", "openai>=1.80,<3",
+  "python-dotenv>=1,<2", "google-api-python-client>=2.140,<3",
+  "google-auth-httplib2>=0.2,<1", "google-auth-oauthlib>=1.2,<2",
+  "pydantic>=2,<3", "httpx>=0.27,<1", "itsdangerous>=2.2,<3",
+  "cryptography>=43,<51", "vercel==0.11.6"
+]
+
 [tool.vercel]
 entrypoint = "server:app"
