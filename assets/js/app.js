@@ -3,11 +3,12 @@ const api = new ApiClient();
 const el = id => document.getElementById(id);
 const msg = (text, danger=false) => {el('message').textContent=text;el('message').className='small mt-3 '+(danger?'text-danger':'text-secondary');};
 function linkFor(source) { if(!source.url) return null; try { const u=new URL(source.url); if(u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname)) return u.href; }catch(_) {} return null; }
+let canSync = false;
 let authorized = false, syncing = false, serverRunning = false, asking = false;
 let pollTimer, documentRequest=0;
 function controls(){
   el('ask').textContent = asking ? 'Consultando…' : 'Consultar agente';
-  el('sync').disabled = !authorized || syncing || serverRunning;
+  el('sync').disabled = !canSync || syncing || serverRunning;
   el('ask').disabled = !authorized || syncing || serverRunning || asking;
   el('sync').textContent = syncing || serverRunning ? 'Sincronizando…' : 'Sincronizar desde Drive';
 }
@@ -116,7 +117,7 @@ async function ask(){
   }
 }
 async function sync(){
-  if(syncing || serverRunning || !authorized)return;
+  if(syncing || serverRunning || !canSync)return;
   if(!confirm('¿Sincronizar archivos de la carpeta autorizada de Google Drive?'))return;
   syncing=true;controls();el('sync-status').textContent='Preparando la sincronización…';schedulePoll();
   try { await api.sync(); }
@@ -132,16 +133,19 @@ el('ask').addEventListener('click',ask);el('sync').addEventListener('click',sync
     const status = await api.request('/api/session');
     const health = await api.health();
     el('health').textContent=health.configured?'Servidor listo':'Configuración pendiente';
-    authorized = status.authenticated;
+    authorized = status.can_query ?? status.authenticated;
+    canSync = status.can_sync ?? status.authenticated;
     controls();
     if(status.web){
       el('account').hidden=false;
       el('login').hidden=status.authenticated;
       el('logout').hidden=!status.authenticated;
-      el('account-status').textContent=status.authenticated?'Sesión autorizada.':'Conecta la cuenta de Google autorizada para consultar tus documentos.';
-      el('sync-help').textContent='Sincroniza los cambios de la carpeta autorizada. Hasta 20 documentos de 20 MB.';
+      el('account-status').textContent=status.authenticated?'Administración de la biblioteca.':'Biblioteca pública: consulta los documentos sin iniciar sesión.';
+      el('login').textContent='Administrar biblioteca';
+      el('sync').hidden=!canSync;
+      el('sync-help').textContent=canSync?'Sincroniza los cambios de la carpeta autorizada. Hasta 20 documentos de 20 MB.':'Los documentos están listos para consultar. La sincronización está reservada al administrador.';
       controls();
-      if(!status.authenticated){el('documents').textContent='Inicia sesión para ver el inventario.';return;}
+      if(!authorized)return;
     }
     await loadDocuments();
   }catch(e){msg(e.message,true);}

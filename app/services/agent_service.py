@@ -19,7 +19,7 @@ class AgentService:
         if use_search and not store:
             raise ValueError("Primero sincroniza los documentos para crear el Vector Store")
         args = {"model": settings.openai_model, "instructions": INSTRUCTIONS,
-                "input": question, "store": False}
+                "input": question, "store": False, "max_output_tokens": 1600}
         if use_search:
             args["tools"] = [{"type": "file_search", "vector_store_ids": [store], "max_num_results": 8}]
             args["include"] = ["file_search_call.results"]

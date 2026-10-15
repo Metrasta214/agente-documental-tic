@@ -16,7 +16,7 @@ let source = fs.readFileSync('assets/js/app.js','utf8').replace("import {ApiClie
 vm.runInContext(source,context);
 const run = code => vm.runInContext(code,context);
 (async()=>{
- run('authorized=true');
+ run('authorized=true;canSync=true');
  response={indexed:2,documents:[{name:'A'},{name:'B'}],sync:{state:'running',processed:2,total:7,updated_at:Date.now()/1000}};
  await run('loadDocuments()');
  assert.equal(element('doc-count').textContent,2);
@@ -71,6 +71,9 @@ const run = code => vm.runInContext(code,context);
  assert.equal(element('ask').disabled,false);
  assert.equal(element('answer').className,'answer');
  assert.match(element('message').textContent,/Fallo de red/);
+ run('canSync=false;controls()');
+ assert.equal(element('sync').disabled,true);
+ assert.equal(element('ask').disabled,false);
  run('documentDisclosure(false)');
  assert.equal(element('toggle-documents').hidden,true);
  assert.equal(element('documents').hidden,true);

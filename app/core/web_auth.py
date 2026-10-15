@@ -55,6 +55,12 @@ def require_owner(request: Request):
         raise HTTPException(403, "Origen de la solicitud no autorizado")
 
 
+def require_public_origin(request: Request):
+    """Public queries are allowed, but browser POSTs must come from this site."""
+    if cloud_mode() and request.method not in ("GET", "HEAD") and request.headers.get("origin") != origin():
+        raise HTTPException(403, "Origen de la solicitud no autorizado")
+
+
 def flow(**kwargs):
     client_id = os.environ.get("GOOGLE_WEB_CLIENT_ID", "")
     client_secret = os.environ.get("GOOGLE_WEB_CLIENT_SECRET", "")
@@ -69,7 +75,9 @@ def flow(**kwargs):
 
 @router.get("/api/session")
 def session(request: Request):
-    return {"web": cloud_mode(), "authenticated": not cloud_mode() or authenticated(request)}
+    is_owner = not cloud_mode() or authenticated(request)
+    return {"web": cloud_mode(), "authenticated": is_owner,
+            "can_query": True, "can_sync": is_owner}
 
 
 @router.get("/auth/login")

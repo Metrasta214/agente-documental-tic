@@ -1,4 +1,4 @@
-"""Aplicación académica LOCAL. No desplegar públicamente sin autenticación de usuarios."""
+"""Public document queries with owner-only synchronization."""
 from pathlib import Path
 import logging
 from ipaddress import ip_address
@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from app.core.config import settings, cloud_mode
-from app.core.web_auth import router as auth_router, require_owner
+from app.core.web_auth import router as auth_router, require_owner, require_public_origin
 from app.models.documento import AskRequest, AskResponse
 from app.services.sync_service import SyncService
 from app.services.agent_service import AgentService
@@ -59,15 +59,18 @@ def health():
     return {"status": "ok", "configured": not missing, "missing": missing,
             "google_oauth_available": (ROOT / "credentials.json").exists() or (ROOT / "token.json").exists()}
 
-@app.get("/api/documents", dependencies=[Depends(require_owner)])
+@app.get("/api/documents")
 def documents():
     doc = SyncService.load_manifest()
-    return {"documents": list(doc.get("documents", {}).values()),
+    # Publish only document display metadata, never provider IDs or credentials.
+    inventory = [{k: d[k] for k in ("name", "url", "mime_type") if k in d}
+                 for d in doc.get("documents", {}).values()]
+    return {"documents": inventory,
             "indexed": len(doc.get("documents", {})),
             "sync": doc.get("sync", {}),
             "vector_store_configured": bool(settings.vector_store_id or doc.get("vector_store_id"))}
 
-@app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(require_owner)])
+@app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(require_public_origin)])
 def ask(payload: AskRequest):
     try:
         if not settings.openai_api_key: raise ValueError("Falta OPENAI_API_KEY")

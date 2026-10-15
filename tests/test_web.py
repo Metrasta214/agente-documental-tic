@@ -22,18 +22,30 @@ def authorize(client, email="owner@example.com"):
     client.cookies.set(web_auth.SESSION, web_auth.signer().dumps({"email": email}))
 
 
-def test_web_blocks_anonymous_inventory_ask_and_sync(web):
-    assert web.get('/api/documents').status_code == 401
-    assert web.post('/api/ask', json={"question": "Pregunta"}).status_code == 401
-    assert web.post('/api/sync').status_code == 401
-    assert web.get('/api/session').json() == {"web": True, "authenticated": False}
+def test_public_inventory_and_queries_keep_sync_private(web, monkeypatch):
+    from app.services.agent_service import AgentService
+    monkeypatch.setattr(CloudState, "read", lambda *args: {"documents": {"private-id": {
+        "name": "Documento.pdf", "url": "https://drive.google.com/file/d/public/view",
+        "openai_file_id": "file-secret", "modified_time": "internal"}}})
+    quota = []
+    monkeypatch.setattr(CloudState, "consume_quota", lambda *args: quota.append(args))
+    monkeypatch.setattr(AgentService, "ask", lambda *args: {"success": True, "answer": "Respuesta", "sources": []})
+    r=web.get('/api/documents')
+    assert r.status_code == 200
+    assert 'file-secret' not in r.text and 'private-id' not in r.text
+    assert r.json()['indexed'] == 1
+    assert web.post('/api/ask', json={"question": "Pregunta"}, headers={"origin": "https://archivo.example"}).status_code == 200
+    assert quota == [("ask", 30)]
+    assert web.post('/api/ask', json={"question": "Pregunta"}).status_code == 403
+    assert web.post('/api/sync', headers={"origin": "https://archivo.example"}).status_code == 401
+    assert web.get('/api/session').json() == {"web": True, "authenticated": False, "can_query": True, "can_sync": False}
 
 
-def test_web_rejects_forged_or_other_owner_session(web):
+def test_web_rejects_forged_or_other_owner_sync(web):
     web.cookies.set(web_auth.SESSION, "forged")
-    assert web.get('/api/documents').status_code == 401
+    assert web.post('/api/sync', headers={"origin": "https://archivo.example"}).status_code == 401
     authorize(web, "other@example.com")
-    assert web.get('/api/documents').status_code == 401
+    assert web.post('/api/sync', headers={"origin": "https://archivo.example"}).status_code == 401
 
 
 def test_owner_inventory_and_csrf(web, monkeypatch):
@@ -88,7 +100,8 @@ def test_web_health_requires_python_blob_credential(web, monkeypatch):
     assert "test-credential-not-real" not in json.dumps(body)
 
 
-def test_logout_clears_session_and_oauth_even_when_expired(web):
+def test_logout_clears_session_and_oauth_even_when_expired(web, monkeypatch):
+    monkeypatch.setattr(CloudState, "read", lambda *args: {"documents": {}})
     web.cookies.set(web_auth.SESSION, "expired")
     web.cookies.set(web_auth.OAUTH, "old-flow")
     r = web.post('/auth/logout', headers={"origin": "https://archivo.example"}, follow_redirects=False)
@@ -98,7 +111,7 @@ def test_logout_clears_session_and_oauth_even_when_expired(web):
     assert any(web_auth.SESSION in c and "Max-Age=0" in c for c in cookies)
     assert any(web_auth.OAUTH in c and "Max-Age=0" in c for c in cookies)
     assert web.get('/api/session').json()["authenticated"] is False
-    assert web.get('/api/documents').status_code == 401
+    assert web.get('/api/documents').status_code == 200
     assert web.post('/auth/logout', headers={"origin": "https://evil.example"}).status_code == 403
     assert web.get('/').headers["referrer-policy"] == "same-origin"
 
