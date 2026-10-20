@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Archivo TIC IA</title>
+  <rect width="64" height="64" rx="15" fill="#002B5B"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="3.5" stroke-linejoin="round">
+    <path d="M12 17h12c5 0 8 3 8 7v27c-2-5-6-7-11-7h-9z"/>
+    <path d="M52 25v19H42c-5 0-8 2-10 7V24c0-4 3-7 8-7"/>
+  </g>
+  <path d="M49 8l2.8 7.2L59 18l-7.2 2.8L49 28l-2.8-7.2L39 18l7.2-2.8z" fill="#EA5455"/>
+</svg>
