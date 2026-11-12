@@ -156,7 +156,7 @@ el('ask').addEventListener('click',ask);el('sync').addEventListener('click',sync
     controls();
     if(status.web){
       el('sync').hidden=!canSync;
-      el('sync-help').textContent=canSync?'Sincroniza los cambios de la carpeta autorizada. Hasta 20 documentos de 20 MB.':'Los documentos están listos para consultar. La sincronización está reservada al administrador.';
+      el('sync-help').textContent=canSync?'Sincroniza los cambios de la carpeta autorizada. Hasta 40 documentos de 20 MB.':'Los documentos están listos para consultar. La sincronización está reservada al administrador.';
       controls();
       if(!authorized)return;
     }

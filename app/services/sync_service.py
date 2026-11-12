@@ -69,8 +69,8 @@ class SyncService:
             self.save_manifest(manifest)
             source = self.drive.list_files(settings.drive_folder_id)
             eligible = {x["id"]: x for x in source if x["mimeType"] in SUPPORTED}
-            if cloud_mode() and len(eligible) > 20:
-                raise ValueError("El laboratorio web admite hasta 20 documentos")
+            if cloud_mode() and len(eligible) > 40:
+                raise ValueError("El laboratorio web admite hasta 40 documentos")
             stats = {"added": 0, "updated": 0, "removed": 0, "unchanged": 0, "errors": []}
             progress = manifest["sync"]
             progress["total"] = len(eligible)

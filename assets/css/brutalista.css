@@ -140,3 +140,9 @@ body.brutal {
   .brutal .workspace-grid > .library-column { align-self:stretch; display:flex; }
   .brutal .library-column > .library { width:100%; max-height:none; }
 }
+
+@media (min-width:48rem) {
+  .brutal .library > .card-body { min-height:0; flex:1; display:flex; flex-direction:column; }
+  .brutal .library .doc-list { flex:1 1 0; min-height:7rem; max-height:none; overflow-y:auto; }
+  .brutal .library .sync-area { flex:none; margin-top:auto; }
+}
