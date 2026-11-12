@@ -64,10 +64,9 @@ def test_unsupported_and_empty_documents(lab):
 def test_only_verified_unique_citations(lab):
     _, client, _, service = lab
     service.sync()
-    client.responses.create.return_value = NS(output_text="Respuesta", output=[NS(content=[NS(annotations=[
+    client.responses.create.return_value = NS(output_text="Respuesta", output=[NS(type="file_search_call", results=[NS(file_id="file_old")]), NS(content=[NS(annotations=[
         NS(type="file_citation", file_id="file_old"),
-        NS(type="file_citation", file_id="file_old"),
-        NS(type="file_citation", file_id="unknown")])])])
+        NS(type="file_citation", file_id="file_old")])])])
     agent = agent_service.AgentService(client)
     result = agent.ask("¿Qué dice la práctica?")
     assert result["sources"] == [{"name": "Práctica", "url": "https://drive.google.com/file/d/doc/view"}]
@@ -87,11 +86,11 @@ def test_retrieval_is_not_a_citation(lab):
     _, client, _, service = lab
     service.sync()
     client.responses.create.return_value = NS(output_text="Respuesta", output=[
-        NS(type="file_search_call", results=[NS(file_id="file_old"), NS(file_id="unknown")])])
+        NS(type="file_search_call", results=[NS(file_id="file_old")])])
     result = agent_service.AgentService(client).ask("Busca la práctica")
     assert result["sources"] == []
-    assert len(result["retrieved_sources"]) == 1
-    assert result["retrieved_sources"][0]["name"] == "Práctica"
+    assert result["answer"] == agent_service.NO_EVIDENCE
+    assert result["retrieved_sources"] == []
     result = agent_service.AgentService(client).ask("Busca la práctica", False)
     assert result["retrieved_sources"] == []
     assert "NO tienes acceso" in client.responses.create.call_args.kwargs["instructions"]
@@ -114,3 +113,27 @@ def test_sync_records_failure_instead_of_remaining_running(lab):
     with pytest.raises(RuntimeError):
         service.sync()
     assert service.load_manifest()["sync"]["state"] == "failed"
+
+
+def test_rag_rejects_mixed_unapproved_retrieval(lab):
+    _, client, _, service = lab
+    service.sync()
+    client.responses.create.return_value = NS(output_text="No publicar", output=[
+        NS(type="file_search_call", results=[NS(file_id="file_old"), NS(file_id="unknown")]),
+        NS(content=[NS(annotations=[NS(type="file_citation", file_id="file_old")])]),
+    ])
+    result = agent_service.AgentService(client).ask("Busca la práctica")
+    assert result["answer"] == agent_service.NO_EVIDENCE
+    assert result["sources"] == []
+
+
+def test_general_mode_does_not_read_index_or_show_partial_response(lab, monkeypatch):
+    _, client, _, _ = lab
+    def unavailable():
+        pytest.fail("El modo general no necesita el índice")
+    monkeypatch.setattr(agent_service.SyncService, "load_manifest", unavailable)
+    client.responses.create.return_value = NS(status="incomplete", output_text="Texto cortado")
+    result = agent_service.AgentService(client).ask("Explica la IA", False)
+    assert result["answer"] == agent_service.NO_ANSWER
+    args = client.responses.create.call_args.kwargs
+    assert "tools" not in args and args["max_output_tokens"] == 250

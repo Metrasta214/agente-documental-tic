@@ -99,13 +99,31 @@ async function ask(){
   if(q.length<3){msg('Escribe una pregunta de al menos 3 caracteres.',true);return;}
   asking=true;followResponse=true;controls();
   const useSearch=el('use-search').checked;
-  el('sources').replaceChildren();showSearching(useSearch);
+  el('sources').replaceChildren();el('sources-area').hidden=true;showSearching(useSearch);
   el('answer').setAttribute('aria-busy','true');
   msg(useSearch?'Buscando información para tu consulta…':'Preparando la respuesta…');
   try {
     const data=await api.ask(q,useSearch);
-    await writeAnswer(data.answer||'Sin respuesta.');
-    const src=el('sources');src.replaceChildren();for(const source of data.sources){const li=document.createElement('li');li.className='list-group-item px-0';const href=linkFor(source);if(href){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.name;li.append(a);}else{li.textContent=source.name;}src.append(li);}if(!data.sources.length){const li=document.createElement('li');li.className='list-group-item px-0 text-secondary';li.textContent='No se recibieron citas verificables para esta respuesta.';src.append(li);}for(const source of (data.retrieved_sources || [])){const li=document.createElement('li');li.className='list-group-item px-0';const href=linkFor(source);li.append(document.createTextNode('Recuperado por File Search (no equivale a cita): '));if(href){const a=document.createElement('a');a.href=href;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.name;li.append(a);}else{li.append(document.createTextNode(source.name));}src.append(li);}
+    const citations = useSearch ? (data.sources || []).filter(source => linkFor(source)) : [];
+    if (useSearch && !citations.length) {
+      el('answer').textContent = 'No hay citas comprobables.';
+      msg('');
+      el('response-announcement').textContent = el('answer').textContent;
+      return;
+    }
+    await writeAnswer(data.answer || 'Sin respuesta.');
+    for (const source of citations) {
+      const li = document.createElement('li');
+      li.className = 'list-group-item px-0';
+      const link = document.createElement('a');
+      link.href = linkFor(source);
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = source.name;
+      li.append(link);
+      el('sources').append(li);
+    }
+    el('sources-area').hidden = !citations.length;
     followAnswer();msg('Consulta finalizada.');
     el('response-announcement').textContent='Respuesta completa. Puedes leerla y consultar sus fuentes.';
   }catch(e){

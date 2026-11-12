@@ -104,4 +104,6 @@ Repositorio GitHub con historia de commits, URL de Vercel si culminas el reto (o
 
 ## Consulta pública y administración
 El inventario y las preguntas están disponibles sin sesión. La cuenta de Google del propietario se conecta una vez desde «Administrar biblioteca»: el refresh token queda cifrado en el almacenamiento privado del servidor. Los visitantes consultan el índice persistido; no reciben tokens ni necesitan autorizar Drive. Cerrar la sesión administrativa no desconecta el servidor.
-Solo el propietario autenticado puede sincronizar. Las consultas web requieren el origen del sitio, conservan el límite global de 30 por hora y generan como máximo 1600 tokens de salida por consulta. El origen no sustituye el límite de consumo: clientes ajenos al navegador pueden imitarlo. Los enlaces originales de Drive mantienen los permisos que tengan en Google.
+Solo el propietario autenticado puede sincronizar. Las consultas web requieren el origen del sitio, conservan el límite global de 30 por hora y generan como máximo 250 tokens de salida por consulta. El origen no sustituye el límite de consumo: clientes ajenos al navegador pueden imitarlo. Los enlaces originales de Drive mantienen los permisos que tengan en Google.
+
+Con RAG, el servidor solo muestra respuestas con citas de archivos indexados y recuperados en esa consulta. Sin RAG, la IA responde con conocimiento general, sin acceder al índice ni a Internet, y debe reconocer cuando no tiene información suficiente.
