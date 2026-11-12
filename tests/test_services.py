@@ -137,3 +137,19 @@ def test_general_mode_does_not_read_index_or_show_partial_response(lab, monkeypa
     assert result["answer"] == agent_service.NO_ANSWER
     args = client.responses.create.call_args.kwargs
     assert "tools" not in args and args["max_output_tokens"] == 250
+
+
+def test_identity_does_not_call_model(lab):
+    _, client, _, _ = lab
+    agent = agent_service.AgentService(client)
+    assert agent.ask("quien soy?", False)["answer"] == agent_service.NO_ANSWER
+    assert agent.ask("¿Quién soy?", True)["answer"] == agent_service.NO_EVIDENCE
+    client.responses.create.assert_not_called()
+
+
+def test_general_abstention_discards_followup(lab):
+    _, client, _, _ = lab
+    client.responses.create.return_value = NS(
+        output_text=agent_service.NO_ANSWER + " ¿Quieres contarme más sobre ti?")
+    result = agent_service.AgentService(client).ask("¿Qué dato privado falta?", False)
+    assert result["answer"] == agent_service.NO_ANSWER

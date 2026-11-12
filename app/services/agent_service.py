@@ -1,4 +1,7 @@
 """Agente documental con trazabilidad de anotaciones file_citation."""
+import re
+import unicodedata
+
 from openai import OpenAI
 from app.core.config import settings
 from app.services.sync_service import SyncService
@@ -6,7 +9,7 @@ from app.services.sync_service import SyncService
 NO_EVIDENCE = "No encontré información suficiente en los documentos indexados para responder."
 NO_ANSWER = "No tengo información suficiente para responder con confianza."
 BRIEF = ("Responde en español, en una o dos frases, o una lista breve si la pregunta lo pide. Máximo 60 palabras. "
-         "Si la pregunta es ambigua, pide una aclaración breve. "
+         "Si falta información, da solo el aviso correspondiente. No hagas preguntas de seguimiento, no solicites datos personales ni ofrezcas ayuda adicional. "
          "No rellenes la respuesta, no inventes datos ni fuentes. ")
 INSTRUCTIONS = BRIEF + (
     "Usa exclusivamente los fragmentos recuperados del índice documental. "
@@ -29,6 +32,11 @@ class AgentService:
         self.client = client or OpenAI(api_key=settings.openai_api_key)
 
     def ask(self, question: str, use_search=True):
+        normalized = unicodedata.normalize("NFKD", question.casefold())
+        words = re.findall(r"[a-z]+", "".join(c for c in normalized if not unicodedata.combining(c)))
+        if " ".join(words) in {"quien soy", "sabes quien soy", "como me llamo", "cual es mi nombre"}:
+            return {"success": True, "answer": NO_EVIDENCE if use_search else NO_ANSWER,
+                    "sources": [], "retrieved_sources": []}
         manifest = SyncService.load_manifest() if use_search else {}
         store = settings.vector_store_id or manifest.get("vector_store_id")
         if use_search and not store:
@@ -46,6 +54,8 @@ class AgentService:
         if getattr(response, "status", "completed") != "completed" or not answer:
             return {"success": True, "answer": NO_ANSWER, "sources": [], "retrieved_sources": []}
         if not use_search:
+            if answer.casefold().startswith(NO_ANSWER.rstrip(".").casefold()):
+                answer = NO_ANSWER
             return {"success": True, "answer": answer, "sources": [], "retrieved_sources": []}
         docs = manifest.get("documents", {})
         by_openai_id = {d["openai_file_id"]: d for d in docs.values()}
