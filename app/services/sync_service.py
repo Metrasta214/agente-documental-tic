@@ -76,7 +76,12 @@ class SyncService:
             progress["total"] = len(eligible)
             progress["stats"] = stats
             self.save_manifest(manifest)
+            deadline = time.monotonic() + 140 if cloud_mode() else float("inf")
             for drive_id, item in eligible.items():
+                if time.monotonic() >= deadline:
+                    progress.update(state="paused", updated_at=time.time())
+                    self.save_manifest(manifest)
+                    return {"vector_store_id": store, "stats": stats, "documents": list(docs.values())}
                 previous = docs.get(drive_id)
                 if previous and previous.get("modified_time") == item.get("modifiedTime"):
                     stats["unchanged"] += 1

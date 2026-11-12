@@ -79,7 +79,8 @@ class CloudState:
     @classmethod
     @contextmanager
     def sync_lease(cls):
-        with cls.exclusive("sync.lock"):
+        # The previous invocation hit its confirmed function timeout.
+        with cls.exclusive("sync-v2.lock"):
             yield
 
     @classmethod

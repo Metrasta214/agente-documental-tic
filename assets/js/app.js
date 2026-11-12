@@ -47,7 +47,7 @@ async function loadDocuments(){
     div.append(a);box.append(div);
   }
   const progress=r.sync || {};
-  serverRunning=progress.state==='running';
+  serverRunning=progress.state==='running' && Date.now()/1000-progress.updated_at<=360;
   const status=el('sync-status');
   if(serverRunning){
     status.textContent=`Indexando: ${progress.processed || 0} de ${progress.total || 0} documentos procesados. El inventario se actualiza automáticamente.`;
@@ -56,7 +56,8 @@ async function loadDocuments(){
     const st=progress.stats || {};
     status.textContent=(st.errors || []).length ? 'Sincronización completada con errores.' : 'Sincronización exitosa.';
     for(const err of st.errors || []){const line=document.createElement('div');line.textContent=`${err.file}: ${err.error}`;status.append(line);}
-  }else if(progress.state==='failed')status.textContent='La sincronización falló. Se conserva el inventario procesado; revisa el error antes de reintentar.';
+  }else if(progress.state==='paused' || progress.state==='running')status.textContent='Sincronización pausada. Los documentos procesados se conservaron.';
+  else if(progress.state==='failed')status.textContent='La sincronización falló. Se conserva el inventario procesado; revisa el error antes de reintentar.';
   controls(); schedulePoll();
 }
 let followResponse = true;
