@@ -135,3 +135,8 @@ body.brutal {
   .brutal .hero .header-inner { gap:8px; }
   .brutal .hero .server-status { padding:4px 6px; }
 }
+
+@media (min-width:48rem) {
+  .brutal .workspace-grid > .library-column { align-self:stretch; display:flex; }
+  .brutal .library-column > .library { width:100%; max-height:none; }
+}

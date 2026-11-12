@@ -54,7 +54,7 @@ async function loadDocuments(){
     if(Date.now()/1000-progress.updated_at>360)status.textContent='La sincronización no ha reportado avances recientemente. Comprueba los registros antes de volver a iniciarla.';
   }else if(progress.state==='completed'){
     const st=progress.stats || {};
-    status.textContent=`Sincronización terminada: ${r.indexed} documentos indexados. ${st.added || 0} nuevos, ${st.updated || 0} actualizados, ${st.removed || 0} eliminados, ${st.unchanged || 0} sin cambios. Errores: ${(st.errors || []).length}.`;
+    status.textContent=(st.errors || []).length ? 'Sincronización completada con errores.' : 'Sincronización exitosa.';
     for(const err of st.errors || []){const line=document.createElement('div');line.textContent=`${err.file}: ${err.error}`;status.append(line);}
   }else if(progress.state==='failed')status.textContent='La sincronización falló. Se conserva el inventario procesado; revisa el error antes de reintentar.';
   controls(); schedulePoll();

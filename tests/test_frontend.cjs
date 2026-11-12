@@ -33,7 +33,7 @@ const run = code => vm.runInContext(code,context);
  response={indexed:7,documents:Array.from({length:7},(_,i)=>({name:String(i)})),sync:{state:'completed',stats:{added:7,errors:[]}}};
  await timer();
  assert.equal(element('doc-count').textContent,7);
- assert.match(element('sync-status').textContent,/terminada/);
+ assert.equal(element('sync-status').textContent,'Sincronización exitosa.');
  assert.equal(element('sync').disabled,false);
  assert.equal(timer,null);
  const task=run('sync()');
