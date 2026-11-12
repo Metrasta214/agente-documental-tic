@@ -153,3 +153,17 @@ def test_general_abstention_discards_followup(lab):
         output_text=agent_service.NO_ANSWER + " ¿Quieres contarme más sobre ti?")
     result = agent_service.AgentService(client).ask("¿Qué dato privado falta?", False)
     assert result["answer"] == agent_service.NO_ANSWER
+
+@pytest.mark.parametrize(("output", "expected"), [
+    ("FUERA_DE_TEMA", agent_service.OUT_OF_SCOPE),
+    ("Un texto ajeno sin etiqueta", agent_service.OUT_OF_SCOPE),
+    ("TIC: RAG recupera documentos antes de generar una respuesta.",
+     "RAG recupera documentos antes de generar una respuesta."),
+])
+def test_general_scope_protocol(lab, output, expected):
+    _, client, _, _ = lab
+    client.responses.create.return_value = NS(output_text=output)
+    question = "¿Qué es RAG?" if output.startswith("TIC:") else "me duele la cabeza"
+    result = agent_service.AgentService(client).ask(question, False)
+    assert result["answer"] == expected
+    assert result["sources"] == []
