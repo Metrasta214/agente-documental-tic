@@ -12,7 +12,12 @@ OUT_OF_SCOPE = "Esta consulta está fuera del tema de IA, informática y TIC."
 BRIEF = ("Responde en español, en una o dos frases, o una lista breve si la pregunta lo pide. Máximo 60 palabras. "
          "Si falta información, da solo el aviso correspondiente. No hagas preguntas de seguimiento, no solicites datos personales ni ofrezcas ayuda adicional. "
          "No rellenes la respuesta, no inventes datos ni fuentes. ")
-INSTRUCTIONS = BRIEF + (
+RAG_MAX_WORDS = 45
+INSTRUCTIONS = (
+    "Responde en español, en una o dos frases o una lista breve, con un máximo de 45 palabras. "
+    "No hagas preguntas de seguimiento ni inventes datos o fuentes. "
+    "Admite cualquier tema respaldado por la biblioteca, incluida cultura general: "
+    "astronomía, geografía, derechos humanos, patrimonio cultural y otros temas indexados. "
     "Usa exclusivamente los fragmentos recuperados del índice documental. "
     "No completes huecos con conocimiento general ni uses Internet. "
     "Cita el archivo que respalda cada afirmación. Si solo hay respaldo para parte "
@@ -53,6 +58,7 @@ class AgentService:
         args = {"model": settings.openai_model, "instructions": INSTRUCTIONS,
                 "input": question, "store": False, "max_output_tokens": 250}
         if use_search:
+            args["max_output_tokens"] = 200
             args["tools"] = [{"type": "file_search", "vector_store_ids": [store], "max_num_results": 8}]
             args["include"] = ["file_search_call.results"]
             args["tool_choice"] = "required"
@@ -102,5 +108,8 @@ class AgentService:
                         known.add(file_id)
         if unexpected_file or not sources or answer == NO_EVIDENCE:
             return {"success": True, "answer": NO_EVIDENCE, "sources": [], "retrieved_sources": []}
+        words = answer.split()
+        if len(words) > RAG_MAX_WORDS:
+            answer = " ".join(words[:RAG_MAX_WORDS]).rstrip(",;:") + "…"
         return {"success": True, "answer": answer, "sources": sources,
                 "retrieved_sources": retrieved_sources}
