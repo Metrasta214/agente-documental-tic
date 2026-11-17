@@ -83,7 +83,7 @@ def answer_from_official_web(client, model, question):
 
     empty = {"success": True, "answer": INSUFFICIENT, "sources": [], "retrieved_sources": []}
     response = client.responses.create(
-        model=model, store=False, max_output_tokens=300,
+        model="gpt-5-mini", store=False, max_output_tokens=1000, reasoning={"effort": "low"},
         tools=[{"type": "web_search", "filters": {"allowed_domains": list(OFFICIAL_DOMAINS)}}],
         instructions=(
             "Atiende exclusivamente consultas sobre normativa y trámites estudiantiles del TecNM. "
