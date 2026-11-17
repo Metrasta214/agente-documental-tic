@@ -115,8 +115,9 @@ body.brutal {
 .brutal .footer-institution { text-align:right; }
 .brutal .footer-social { display:flex; justify-self:center; gap:.65rem; }
 @media (max-width:30rem) {
-  .brutal .footer-inner { grid-template-columns:minmax(0,1fr); gap:5px; padding-block:7px; }
-  .brutal .footer-institution { text-align:left; }
+  .brutal .footer-inner { grid-template-columns:repeat(2,minmax(0,1fr)); gap:2px 12px; padding-block:7px; }
+  .brutal .footer-social { grid-column:1 / -1; grid-row:2; }
+  .brutal .footer-social a { display:grid; place-items:center; min-width:44px; min-height:44px; }
 }
 @media (max-height:540px) and (orientation:landscape) {
   .brutal .footer-inner { padding-block:5px; }
