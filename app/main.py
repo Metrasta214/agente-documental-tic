@@ -9,7 +9,8 @@ from app.core.config import settings, cloud_mode
 from app.core.web_auth import router as auth_router, require_owner, require_public_origin
 from app.models.documento import AskRequest, AskResponse
 from app.services.sync_service import SyncService
-from app.services.agent_service import AgentService
+from openai import OpenAI
+from app.services.normativa import inventory, answer_question
 
 ROOT = Path(__file__).resolve().parents[1]
 logger = logging.getLogger(__name__)
@@ -61,14 +62,8 @@ def health():
 
 @app.get("/api/documents")
 def documents():
-    doc = SyncService.load_manifest()
-    # Publish only document display metadata, never provider IDs or credentials.
-    inventory = [{k: d[k] for k in ("name", "url", "mime_type") if k in d}
-                 for d in doc.get("documents", {}).values()]
-    return {"documents": inventory,
-            "indexed": len(doc.get("documents", {})),
-            "sync": doc.get("sync", {}),
-            "vector_store_configured": bool(settings.vector_store_id or doc.get("vector_store_id"))}
+    files = inventory()
+    return {"documents": files, "indexed": len(files), "sync": {}, "vector_store_configured": bool(files)}
 
 @app.post("/api/ask", response_model=AskResponse, dependencies=[Depends(require_public_origin)])
 def ask(payload: AskRequest):
@@ -77,7 +72,7 @@ def ask(payload: AskRequest):
         if cloud_mode():
             from app.core.cloud_state import CloudState
             CloudState.consume_quota("ask", 30)
-        return AgentService().ask(payload.question, payload.use_search)
+        return answer_question(OpenAI(api_key=settings.openai_api_key), settings.openai_model, payload.question)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception:
@@ -97,3 +92,4 @@ def sync():
     except Exception:
         logger.exception("Error al sincronizar documentos")
         raise HTTPException(status_code=502, detail="Sincronización fallida. Revisa el registro local.")
+

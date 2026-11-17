@@ -15,18 +15,18 @@
   <div class="app-frame">
   <header class="hero">
     <div class="container header-inner">
-      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h3z"/></svg></span><div><h1>Archivo TIC <span>IA</span></h1><p>Biblioteca de inteligencia artificial y tecnologías de la información</p></div></div>
+      <div class="brand"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4h6a3 3 0 0 1 3 3v14a4 4 0 0 0-4-3H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v14a4 4 0 0 1 4-3h3z"/></svg></span><div><h1>Archivo TIC <span>IA</span></h1><p>Normativa estudiantil del TecNM · Campus Pachuca</p></div></div>
       <span class="server-status" id="health" role="status">Comprobando servidor…</span>
     </div>
   </header>
   <main class="container workspace">
-    <div class="page-intro"><div><p class="eyebrow">ESPACIO DE INVESTIGACIÓN · PRÁCTICA 2.3</p><h2>De los documentos al conocimiento.</h2><p>Consulta la biblioteca de IA y TIC. Lee la respuesta y verifica sus fuentes.</p></div><span class="workspace-label">Google Drive + IA</span></div>
+    <div class="page-intro"><div><p class="eyebrow">ESPACIO DE INVESTIGACIÓN · PRÁCTICA 2.3</p><h2>De los documentos al conocimiento.</h2><p>Consulta los lineamientos y reglamentos del TecNM y verifica las fuentes.</p></div><span class="workspace-label">TecNM · Campus Pachuca</span></div>
     <div class="workspace-grid">
       <aside class="library-column">
         <section class="card shell library" aria-labelledby="library-title">
           <div class="card-body">
             <div class="section-heading"><h2 id="library-title"><span class="panel-index" aria-hidden="true">01</span> Base documental</h2><span class="visually-hidden"><span id="doc-count">0</span> documentos indexados</span><button id="toggle-documents" class="documents-toggle" type="button" aria-expanded="false" aria-controls="documents" aria-label="Mostrar archivos" hidden><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></button></div>
-            <p class="section-description">Documentos de tu carpeta autorizada de Google Drive.</p>
+            <p class="section-description">Lineamientos y reglamentos oficiales para estudiantes.</p>
             <div id="documents" hidden class="doc-list" aria-label="Documentos indexados" aria-live="polite">Sin documentos indexados.</div>
             <div class="sync-area"><button type="button" id="sync" disabled class="btn btn-outline-primary w-100">Sincronizar desde Drive</button>
             <div id="sync-status" class="small mt-2" role="status" aria-live="polite"></div>
@@ -45,9 +45,9 @@
         <section class="card shell query-card" aria-labelledby="query-title"><div class="card-body">
           <p class="eyebrow">CONSULTA TU BIBLIOTECA</p><h2 id="query-title"><span class="panel-index" aria-hidden="true">02</span> ¿Qué quieres investigar?</h2>
           <label class="form-label" for="question">Pregunta sobre los documentos</label>
-          <textarea class="form-control" id="question" rows="4" maxlength="3000" aria-describedby="question-help" placeholder="¿Qué riesgos tiene la IA generativa y cómo se pueden reducir?" required></textarea>
+          <textarea class="form-control" id="question" rows="4" maxlength="3000" aria-describedby="question-help" placeholder="¿Cómo acredito mis actividades complementarias?" required></textarea>
           <p id="question-help" class="field-hint">Pregunta, compara conceptos o pide un resumen. <span>Ctrl / ⌘ + Enter para consultar.</span></p>
-          <div class="query-actions"><div class="form-check form-switch"><input id="use-search" class="form-check-input" type="checkbox" role="switch" aria-describedby="search-help" checked><label class="form-check-label" for="use-search">Buscar en los documentos</label><p id="search-help">File Search (RAG)</p></div><button class="btn btn-primary" type="button" id="ask" disabled>Consultar agente</button></div>
+          <div class="query-actions"><div class="form-check form-switch"><input id="use-search" class="form-check-input" type="checkbox" role="switch" aria-describedby="search-help" checked disabled><label class="form-check-label" for="use-search">Buscar en los documentos</label><p id="search-help">Normativa estudiantil</p></div><button class="btn btn-primary" type="button" id="ask" disabled>Consultar agente</button></div>
           <div id="message" role="status" class="small mt-3" aria-live="polite"></div>
         </div></section>
       </div>
@@ -63,3 +63,4 @@
   <script type="module" src="/assets/js/app.js"></script>
 </body>
 </html>
+
