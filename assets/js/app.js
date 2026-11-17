@@ -94,6 +94,21 @@ async function writeAnswer(text) {
     requestAnimationFrame(frame);
   });
 }
+function formatAnswer(text) {
+  const headings = new Set(['Respuesta breve', 'Requisitos', 'Procedimiento', 'Ejemplo práctico', 'Normativa aplicable']);
+  const answer = el('answer');
+  answer.replaceChildren();
+  for (const [index, line] of text.split('\n').entries()) {
+    if (index) answer.append(document.createTextNode('\n'));
+    if (headings.has(line.trim())) {
+      const heading = document.createElement('strong');
+      heading.textContent = line.trim();
+      answer.append(heading);
+    } else {
+      answer.append(document.createTextNode(line));
+    }
+  }
+}
 async function ask(){
   if(!authorized || syncing || serverRunning || asking)return;
   const q=el('question').value.trim();
@@ -113,6 +128,7 @@ async function ask(){
       return;
     }
     await writeAnswer(data.answer || 'Sin respuesta.');
+    formatAnswer(data.answer || 'Sin respuesta.');
     for (const source of citations) {
       const li = document.createElement('li');
       li.className = 'list-group-item px-0';
