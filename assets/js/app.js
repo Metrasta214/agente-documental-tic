@@ -94,7 +94,38 @@ async function writeAnswer(text) {
     requestAnimationFrame(frame);
   });
 }
-function formatAnswer(text) {
+function sourceLink(href, label) {
+  const link = document.createElement('a');
+  link.href = href;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+  link.textContent = label;
+  return link;
+}
+
+function renderSources(citations) {
+  const groups = new Map();
+  for (const source of citations) {
+    const url = new URL(linkFor(source));
+    url.searchParams.delete('utm_source');
+    const href = url.href;
+    const page = /^#page=(\d+)$/.exec(url.hash)?.[1];
+    const key = page ? href.split('#')[0] : href;
+    if (!groups.has(key)) groups.set(key, {name: source.name, links: new Map()});
+    groups.get(key).links.set(href, page);
+  }
+  for (const [key, group] of groups) {
+    const li = document.createElement('li');
+    li.className = 'list-group-item px-0';
+    li.append(sourceLink(key, group.name));
+    for (const [href, page] of group.links) {
+      if (page) li.append(document.createTextNode(' · '), sourceLink(href, 'p. ' + page));
+    }
+    el('sources').append(li);
+  }
+}
+
+function formatAnswer(text, citations) {
   const headings = new Set(['Respuesta breve', 'Requisitos', 'Procedimiento', 'Ejemplo práctico', 'Normativa aplicable']);
   const answer = el('answer');
   answer.replaceChildren();
@@ -105,7 +136,16 @@ function formatAnswer(text) {
       heading.textContent = line.trim();
       answer.append(heading);
     } else {
-      answer.append(document.createTextNode(line));
+      const allowed = new Set(citations.map(source => linkFor(source)));
+      const pattern = /\[([^\]]+)\]\((https:\/\/[^\s)]+)\)|(https:\/\/[^\s<>()]+[^\s<>().,;!?])/g;
+      let cursor = 0;
+      for (const match of line.matchAll(pattern)) {
+        answer.append(document.createTextNode(line.slice(cursor, match.index)));
+        const href = linkFor({url: match[2] || match[3]});
+        answer.append(allowed.has(href) ? sourceLink(href, match[1] || href) : document.createTextNode(match[0]));
+        cursor = match.index + match[0].length;
+      }
+      answer.append(document.createTextNode(line.slice(cursor)));
     }
   }
 }
@@ -128,18 +168,8 @@ async function ask(){
       return;
     }
     await writeAnswer(data.answer || 'Sin respuesta.');
-    formatAnswer(data.answer || 'Sin respuesta.');
-    for (const source of citations) {
-      const li = document.createElement('li');
-      li.className = 'list-group-item px-0';
-      const link = document.createElement('a');
-      link.href = linkFor(source);
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = source.name;
-      li.append(link);
-      el('sources').append(li);
-    }
+    formatAnswer(data.answer || 'Sin respuesta.', citations);
+    renderSources(citations);
     el('sources-area').hidden = !citations.length;
     followAnswer();msg('Consulta finalizada.');
     el('response-announcement').textContent='Respuesta completa. Puedes leerla y consultar sus fuentes.';
