@@ -2,7 +2,7 @@ import {ApiClient} from './api.js';
 const api = new ApiClient();
 const el = id => document.getElementById(id);
 const msg = (text, danger=false) => {el('message').textContent=text;el('message').className='small mt-3 '+(danger?'text-danger':'text-secondary');};
-function linkFor(source) { if(!source.url) return null; try { const u=new URL(source.url,window.location.origin); if(u.origin===window.location.origin && u.pathname.startsWith("/assets/normativa/") && u.pathname.endsWith(".pdf")) return u.href; if(u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname)) return u.href; }catch(_) {} return null; }
+function linkFor(source) { if(!source.url) return null; try { const u=new URL(source.url,window.location.origin); if(u.origin===window.location.origin && u.pathname.startsWith("/assets/normativa/") && u.pathname.endsWith(".pdf")) return u.href; if(u.protocol==='https:' && ['tecnm.mx','itpachuca.edu.mx'].some(domain => u.hostname === domain || u.hostname.endsWith('.' + domain))) return u.href; }catch(_) {} return null; }
 let canSync = false;
 let authorized = false, syncing = false, serverRunning = false, asking = false;
 let pollTimer, documentRequest=0;
@@ -70,7 +70,7 @@ function followAnswer() {
 }
 function showSearching(useSearch) {
   const answer=el('answer'); answer.replaceChildren(); answer.className='answer is-waiting';
-  const label=document.createElement('span');label.textContent=useSearch?'Buscando en los documentos…':'Preparando la respuesta…';
+  const label=document.createElement('span');label.textContent=useSearch?'Buscando en los documentos…':'Buscando en sitios oficiales del TecNM…';
   const dots=document.createElement('span');dots.className='typing-dots';dots.setAttribute('aria-hidden','true');
   for(let i=0;i<3;i++)dots.append(document.createElement('i'));
   answer.append(label,dots);
@@ -102,11 +102,11 @@ async function ask(){
   const useSearch=el('use-search').checked;
   el('sources').replaceChildren();el('sources-area').hidden=true;showSearching(useSearch);
   el('answer').setAttribute('aria-busy','true');
-  msg(useSearch?'Buscando información para tu consulta…':'Preparando la respuesta…');
+  msg(useSearch?'Buscando información para tu consulta…':'Buscando en sitios oficiales del TecNM…');
   try {
     const data=await api.ask(q,useSearch);
-    const citations = useSearch ? (data.sources || []).filter(source => linkFor(source)) : [];
-    if (useSearch && !citations.length) {
+    const citations = (data.sources || []).filter(source => linkFor(source));
+    if (!citations.length) {
       el('answer').textContent = 'No hay información comprobable en la normativa disponible.';
       msg('');
       el('response-announcement').textContent = el('answer').textContent;
@@ -165,4 +165,3 @@ el('ask').addEventListener('click',ask);el('sync').addEventListener('click',sync
   }catch(e){msg(e.message,true);}
 }
 initialize();
-

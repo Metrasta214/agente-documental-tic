@@ -10,7 +10,7 @@ from app.core.web_auth import router as auth_router, require_owner, require_publ
 from app.models.documento import AskRequest, AskResponse
 from app.services.sync_service import SyncService
 from openai import OpenAI
-from app.services.normativa import inventory, answer_question
+from app.services.normativa import answer_from_official_web, answer_question, inventory
 
 ROOT = Path(__file__).resolve().parents[1]
 logger = logging.getLogger(__name__)
@@ -72,7 +72,8 @@ def ask(payload: AskRequest):
         if cloud_mode():
             from app.core.cloud_state import CloudState
             CloudState.consume_quota("ask", 30)
-        return answer_question(OpenAI(api_key=settings.openai_api_key), settings.openai_model, payload.question)
+        handler = answer_question if payload.use_search else answer_from_official_web
+        return handler(OpenAI(api_key=settings.openai_api_key), settings.openai_model, payload.question)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception:
@@ -92,4 +93,3 @@ def sync():
     except Exception:
         logger.exception("Error al sincronizar documentos")
         raise HTTPException(status_code=502, detail="Sincronización fallida. Revisa el registro local.")
-
