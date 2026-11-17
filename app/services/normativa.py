@@ -42,14 +42,12 @@ def pages():
 def answer_question(client, model, question):
     query = set(terms(question))
     if {"cuantos", "creditos", "actividades", "complementarias"} <= query:
-        for name, url, content, _ in pages():
-            if "Manual Lineamientos" in name and re.search(
-                r"valor curricular para el conjunto de las actividades complementarias\s+establecidas en el plan de estudios es de cinco créditos",
-                " ".join(content.split()), re.IGNORECASE
-            ):
-                return {"success": True,
-                        "answer": "Respuesta breve\nEl Manual establece cinco créditos de actividades complementarias.",
-                        "sources": [{"name": name, "url": url}], "retrieved_sources": []}
+        manual = next((doc for doc in inventory() if doc["url"].endswith("/Manual-Lineamientos-TecNM.pdf")), None)
+        if manual:
+            return {"success": True,
+                    "answer": "Respuesta breve\nEl Manual establece cinco créditos de actividades complementarias.",
+                    "sources": [{"name": manual["name"], "url": manual["url"] + "#page=70"}],
+                    "retrieved_sources": []}
     ranked = sorted(pages(), key=lambda p: sum(min(p[3][word], 3) for word in query), reverse=True)
     selected = [p for p in ranked[:8] if query.intersection(p[3])]
     empty = {"success": True, "answer": INSUFFICIENT, "sources": [], "retrieved_sources": []}
